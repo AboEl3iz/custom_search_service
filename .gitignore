@@ -9,5 +9,5 @@ dist/
 *.swp
 *.swo
 *~
-
+.env
 /src/generated/prisma

@@ -5,10 +5,10 @@ A high-performance TypeScript-based search service for e-commerce platforms with
 ##  Features
 
 ### Core Capabilities
-- ** Full-Text Search**: Semantic search that understands intent, not just exact matches
-- ** Auto-Correct**: Automatically fixes user typos (e.g., "iphune" → "iPhone")
-- ** Autocomplete/Suggestions**: Real-time suggestions while typing (e.g., "iph" → "iPhone 15", "iPhone 15 Pro")
-- ** Multi-Engine Support**: Switch between PostgreSQL and Elasticsearch based on your needs
+- **Full-Text Search**: Semantic search that understands intent, not just exact matches
+- **Auto-Correct**: Automatically fixes user typos (e.g., "iphune" → "iPhone")
+- **Autocomplete/Suggestions**: Real-time suggestions while typing (e.g., "iph" → "iPhone 15", "iPhone 15 Pro")
+- **Multi-Engine Support**: Switch between PostgreSQL and Elasticsearch based on your needs
 
 ### Advanced Features
 - Fuzzy matching for typo tolerance
@@ -190,7 +190,7 @@ docker-compose down
 
 ---
 
-## 🔌 API Endpoints
+##  API Endpoints
 
 ### Search
 

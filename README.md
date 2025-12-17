@@ -1,14 +1,14 @@
-# 🔍 Smart E-Commerce Search Service
+#  Smart E-Commerce Search Service
 
 A high-performance TypeScript-based search service for e-commerce platforms with semantic search, auto-correction, and autocomplete capabilities powered by PostgreSQL and Elasticsearch.
 
-## ✨ Features
+##  Features
 
 ### Core Capabilities
-- **🎯 Full-Text Search**: Semantic search that understands intent, not just exact matches
-- **✅ Auto-Correct**: Automatically fixes user typos (e.g., "iphune" → "iPhone")
-- **💡 Autocomplete/Suggestions**: Real-time suggestions while typing (e.g., "iph" → "iPhone 15", "iPhone 15 Pro")
-- **🚀 Multi-Engine Support**: Switch between PostgreSQL and Elasticsearch based on your needs
+- ** Full-Text Search**: Semantic search that understands intent, not just exact matches
+- ** Auto-Correct**: Automatically fixes user typos (e.g., "iphune" → "iPhone")
+- ** Autocomplete/Suggestions**: Real-time suggestions while typing (e.g., "iph" → "iPhone 15", "iPhone 15 Pro")
+- ** Multi-Engine Support**: Switch between PostgreSQL and Elasticsearch based on your needs
 
 ### Advanced Features
 - Fuzzy matching for typo tolerance
@@ -18,7 +18,7 @@ A high-performance TypeScript-based search service for e-commerce platforms with
 
 ---
 
-## 🏗️ Project Architecture
+##  Project Architecture
 
 ```
 search-service/
@@ -61,7 +61,7 @@ search-service/
 
 ---
 
-## 🗄️ Database Implementations
+##  Database Implementations
 
 ### PostgreSQL Engine
 
@@ -101,7 +101,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 ---
 
-## 📦 Sample Product Data
+##  Sample Product Data
 
 Seven sample products included (iPhones, Samsung phones, MacBooks):
 - iPhone 15 Pro, iPhone 15, iPhone 14
@@ -112,7 +112,7 @@ Each product has: `title`, `description`, `brand`, `category`
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 - Node.js 20+
@@ -234,7 +234,7 @@ curl http://localhost:3000/health
 
 ---
 
-## 🛠️ Development
+##  Development
 
 ### Available Scripts
 
@@ -250,7 +250,7 @@ npm run lint          # Run ESLint
 
 ---
 
-## 🔄 Design Patterns
+##  Design Patterns
 
 ### Factory Pattern
 The `SearchFactory` dynamically selects a search engine based on the `SEARCH_ENGINE` environment variable, allowing runtime engine switching without code changes.
@@ -260,9 +260,9 @@ Both `PostgresSearchEngine` and `ElasticSearchEngine` implement the `ISearchEngi
 
 ---
 
-## 📊 Current Status
+##  Current Status
 
-### ✅ Completed
+###  Completed
 - [x] Express.js server with TypeScript
 - [x] PostgreSQL with full-text search and fuzzy matching
 - [x] Elasticsearch with autocomplete and fuzzy matching
@@ -273,7 +273,7 @@ Both `PostgresSearchEngine` and `ElasticSearchEngine` implement the `ISearchEngi
 - [x] Database migrations with Prisma
 - [x] Sample product seeding for both engines
 
-### 🚧 Future Improvements
+###  Future Improvements
 - [ ] Performance optimization with Redis caching
 - [ ] Advanced filtering (brand, category, price range)
 - [ ] Faceted search results
@@ -285,7 +285,7 @@ Both `PostgresSearchEngine` and `ElasticSearchEngine` implement the `ISearchEngi
 
 ---
 
-## 🐛 Known Issues & Solutions
+##  Known Issues & Solutions
 
 ### PostgreSQL
 - **Fuzzy Matching**: Requires `pg_trgm` extension for `similarity()` function
@@ -306,7 +306,7 @@ Both `PostgresSearchEngine` and `ElasticSearchEngine` implement the `ISearchEngi
 
 ---
 
-## 📚 Resources & Documentation
+##  Resources & Documentation
 
 - [Express.js Documentation](https://expressjs.com/)
 - [PostgreSQL Full-Text Search](https://www.postgresql.org/docs/current/textsearch.html)

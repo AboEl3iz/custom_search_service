@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/index.js",
     "watch": "tsc --watch",
     "seed_postgres": "ts-node src/seed/seed.postgres.ts",
     "seed_elastic": "ts-node src/seed/seed.elastic.ts"

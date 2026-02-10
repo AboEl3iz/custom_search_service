@@ -7,8 +7,12 @@ export class ElasticSearchEngine extends SearchEngine {
 
   constructor() {
     super();
+    const host = process.env.ELASTICSEARCH_HOST || "localhost";
+    const port = process.env.ELASTICSEARCH_PORT || "9200";
+    const node = process.env.ELASTIC_URL || `http://${host}:${port}`;
+
     this.client = new Client({
-      node: process.env.ELASTIC_URL || "http://localhost:9200",
+      node,
       headers: { Accept: "application/vnd.elasticsearch+json; compatible-with=8" }
     });
   }

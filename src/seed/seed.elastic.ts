@@ -1,7 +1,14 @@
 import { Client } from "@elastic/elasticsearch";
 
+import dotenv from 'dotenv';
+dotenv.config();
+
+const host = process.env.ELASTICSEARCH_HOST || "localhost";
+const port = process.env.ELASTICSEARCH_PORT || "9200";
+const node = process.env.ELASTIC_URL || `http://${host}:${port}`;
+
 const es = new Client({
-  node: process.env.ELASTICSEARCH_URL || "http://localhost:9200",
+  node,
 });
 
 const products = [

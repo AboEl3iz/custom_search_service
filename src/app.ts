@@ -15,4 +15,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Show which container is handling the request (for load balancer demo)
+app.get('/whoami', (req, res) => {
+  const hostname = require('os').hostname();
+  res.json({
+    container: hostname,
+    timestamp: new Date().toISOString(),
+    message: 'This request was handled by container: ' + hostname
+  });
+});
+
 export default app;

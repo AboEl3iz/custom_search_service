@@ -2,9 +2,9 @@
   "name": "search-service",
   "version": "1.0.0",
   "description": "Express search service with TypeScript",
-  "main": "dist/server.js",
+  "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node src/server.ts",
+    "dev": "ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "watch": "tsc --watch",

@@ -3,6 +3,9 @@ dist/
 .env.local
 .env.*.local
 *.log
+guide.*
+guide2*
+flows
 .DS_Store
 .vscode/
 .idea/
@@ -11,3 +14,5 @@ dist/
 *~
 .env
 /src/generated/prisma
+SearchService_CDC.postman_collection.*
+kibana_queries.md

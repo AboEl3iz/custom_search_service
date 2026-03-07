@@ -6,6 +6,7 @@ const pool = new Pool({
   host: process.env.POSTGRES_HOST || 'localhost',
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
   database: process.env.POSTGRES_DB || 'search_db',
+
 });
 
 pool.on('error', (err: Error) => {
@@ -13,7 +14,10 @@ pool.on('error', (err: Error) => {
 });
 
 export const db = {
-  query: (text: string, params?: any[]) => pool.query(text, params),
+  query: <T extends Record<string, any> = Record<string, any>>(
+    text: string,
+    params?: any[]
+  ) => pool.query<T>(text, params),
   getClient: () => pool.connect(),
 };
 

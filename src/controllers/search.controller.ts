@@ -15,5 +15,5 @@ export const search = async (req: Request, res: Response): Promise<void> => {
   const normalized = normalizeQuery(q);
   const result = await engine.search(normalized);
 
-  res.json(result);
+  res.json(result); 
 };

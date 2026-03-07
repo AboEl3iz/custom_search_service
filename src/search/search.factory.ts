@@ -1,16 +1,7 @@
-import { PostgresSearchEngine } from "./postgres.engine";
-import { ElasticSearchEngine } from "./elastic.engine";
-import { SearchEngine } from "./search.engine";
-import dotenv from 'dotenv';
-dotenv.config();
-export const createSearchEngine = (): SearchEngine => {
-  const engineType = process.env.SEARCH_ENGINE || "postgres";
+import { ElasticSearchEngine } from './elastic.engine';
 
-  if (engineType === "elastic") {
-    console.log(`elastic search has been running`)
-    return new ElasticSearchEngine();
-  }
-    console.log(`postgres has been running`)
-
-  return new PostgresSearchEngine();
+// Search always goes to Elasticsearch — it is the dedicated read model.
+// All writes go through the product repository → PostgreSQL → outbox → CDC poller → ES.
+export const createSearchEngine = (): ElasticSearchEngine => {
+  return new ElasticSearchEngine();
 };

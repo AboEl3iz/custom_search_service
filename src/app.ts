@@ -17,7 +17,7 @@ app.use('/api/products', productRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok the app is healthy', timestamp: new Date().toISOString() });
 });
 
 

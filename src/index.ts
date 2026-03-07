@@ -13,7 +13,8 @@ async function bootstrap(): Promise<void> {
     await ensureIndex();
 
     // Start the Kafka consumer (Debezium CDC events → Elasticsearch sync)
-    await startKafkaConsumer();
+    // Retries in background — does NOT block HTTP server startup
+    startKafkaConsumer();
 
     const server = app.listen(PORT, () => {
       console.log(`[App] Server running on http://localhost:${PORT}`);

@@ -68,10 +68,10 @@ async function handleDebeziumMessage(value: string | null): Promise<void> {
 }
 
 /**
- * Start the Kafka consumer that processes Debezium CDC events
- * and syncs them to Elasticsearch.
+ * Attempt a single Kafka consumer connection + subscribe + run.
+ * Throws if any step fails.
  */
-export async function startKafkaConsumer(): Promise<void> {
+async function connectAndRun(): Promise<void> {
     consumer = kafka.consumer({ groupId: GROUP_ID });
 
     await consumer.connect();
@@ -93,6 +93,40 @@ export async function startKafkaConsumer(): Promise<void> {
             }
         },
     });
+}
+
+/**
+ * Start the Kafka consumer that processes Debezium CDC events
+ * and syncs them to Elasticsearch.
+ *
+ * Retries indefinitely with exponential backoff (5 s → 30 s cap) so that
+ * a slow-starting Kafka broker does NOT crash the Express server.
+ */
+export function startKafkaConsumer(): void {
+    const MAX_DELAY_MS = 30_000;
+    let attempt = 0;
+
+    const tryConnect = async () => {
+        attempt++;
+        try {
+            await connectAndRun();
+        } catch (err) {
+            // Disconnect any partial consumer state before retrying
+            if (consumer) {
+                try { await consumer.disconnect(); } catch (_) { /* ignore */ }
+                consumer = null;
+            }
+            const delayMs = Math.min(5_000 * Math.pow(2, attempt - 1), MAX_DELAY_MS);
+            console.warn(
+                `[Kafka] Connection attempt #${attempt} failed. Retrying in ${delayMs / 1000}s...`,
+                (err as Error).message
+            );
+            setTimeout(tryConnect, delayMs);
+        }
+    };
+
+    // Fire-and-forget — do NOT await so the HTTP server can start immediately
+    tryConnect();
 }
 
 /**

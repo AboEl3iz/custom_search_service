@@ -20,15 +20,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Show which container is handling the request
-app.get('/whoami', (req, res) => {
-  const hostname = require('os').hostname();
-  res.json({
-    container: hostname,
-    timestamp: new Date().toISOString(),
-    message: 'This request was handled by container: ' + hostname,
-  });
-});
+
 
 export default app;
 

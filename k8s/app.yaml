@@ -1,0 +1,91 @@
+# ============================================================
+# Search Service App — Deployment + Service
+# Image is pushed by CI/CD to: <DOCKER_HUB_USERNAME>/search-service:latest
+# Replace <DOCKER_HUB_USERNAME> with your actual Docker Hub username.
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-service-app
+  namespace: search-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: search-service-app
+  template:
+    metadata:
+      labels:
+        app: search-service-app
+    spec:
+      initContainers:
+        # Wait for Elasticsearch
+        - name: wait-for-elasticsearch
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Elasticsearch at elasticsearch-service:9200..."
+              until nc -z elasticsearch-service 9200; do
+                sleep 5
+              done
+              echo "Elasticsearch is ready."
+        # Wait for Kafka
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Kafka at kafka-service:9092..."
+              until nc -z kafka-service 9092; do
+                sleep 5
+              done
+              echo "Kafka is ready."
+      containers:
+        - name: search-service-app
+          image: aboelaiz/search:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: search-service-config
+            - secretRef:
+                name: search-service-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            failureThreshold: 6
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-service-app-service
+  namespace: search-service
+spec:
+  selector:
+    app: search-service-app
+  ports:
+    - port: 3000
+      targetPort: 3000

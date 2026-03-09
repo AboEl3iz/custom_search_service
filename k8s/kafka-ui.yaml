@@ -1,0 +1,90 @@
+# ============================================================
+# Kafka UI (Provectus) — Deployment + Service
+# Accessible at: http://kafka-ui.local (via Ingress)
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  namespace: search-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      initContainers:
+        # Block until Kafka is accepting connections on the internal listener
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Kafka at kafka-service:29092..."
+              until nc -z kafka-service 29092; do
+                sleep 3
+              done
+              echo "Kafka is ready."
+      containers:
+        - name: kafka-ui
+          image: provectuslabs/kafka-ui:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: "search-service-cluster"
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: "kafka-service:29092"
+            - name: KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME
+              value: "debezium"
+            - name: KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS
+              value: "http://kafka-connect-service:8083"
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: "/"
+          # startupProbe gives Spring Boot up to 5 minutes to become ready.
+          # readiness/liveness probes are suspended until startupProbe succeeds.
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 30 # 20 + 30*10 = 320 s max startup window
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 20
+            failureThreshold: 5
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui-service
+  namespace: search-service
+spec:
+  selector:
+    app: kafka-ui
+  ports:
+    - port: 8080
+      targetPort: 8080

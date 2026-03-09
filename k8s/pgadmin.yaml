@@ -1,0 +1,99 @@
+# ============================================================
+# pgAdmin — Deployment + PVC + Service
+# Accessible at: http://pgadmin.local (via Ingress)
+# Default login: admin@admin.com / admin123
+# ============================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pgadmin-pvc
+  namespace: search-service
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+  namespace: search-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      securityContext:
+        fsGroup: 5050 # pgAdmin runs as uid/gid 5050
+      containers:
+        - name: pgadmin
+          image: dpage/pgadmin4:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              value: "admin@admin.com"
+            - name: PGADMIN_DEFAULT_PASSWORD
+              value: "admin123"
+            - name: PGADMIN_CONFIG_SERVER_MODE
+              value: "False"
+            - name: SCRIPT_NAME
+              value: ""
+          volumeMounts:
+            - name: pgadmin-storage
+              mountPath: /var/lib/pgadmin
+          # pgAdmin 4 is a Python/Flask app that initialises a SQLite DB on first run.
+          # startupProbe gives it up to 300 s to become ready before
+          # readiness/liveness probes kick in.
+          startupProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30 # 10 + 30*10 = 310 s max startup window
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /misc/ping
+              port: 80
+            periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /misc/ping
+              port: 80
+            periodSeconds: 20
+            failureThreshold: 5
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "300m"
+      volumes:
+        - name: pgadmin-storage
+          persistentVolumeClaim:
+            claimName: pgadmin-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgadmin-service
+  namespace: search-service
+spec:
+  selector:
+    app: pgadmin
+  ports:
+    - port: 80
+      targetPort: 80

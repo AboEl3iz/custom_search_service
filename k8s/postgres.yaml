@@ -1,0 +1,133 @@
+# ============================================================
+# PostgreSQL — StatefulSet + PVC + Service
+# ============================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: search-service
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-sql
+  namespace: search-service
+data:
+  init-db.sql: |
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+    CREATE TABLE IF NOT EXISTS "Product" (
+      id          SERIAL PRIMARY KEY,
+      title       TEXT    NOT NULL,
+      description TEXT,
+      brand       TEXT,
+      category    TEXT,
+      price       NUMERIC(10, 2) DEFAULT 0,
+      stock       INTEGER        DEFAULT 0,
+      created_at  TIMESTAMPTZ    DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ    DEFAULT NOW()
+    );
+
+    ALTER TABLE "Product" REPLICA IDENTITY FULL;
+
+    CREATE INDEX IF NOT EXISTS idx_product_fts
+      ON "Product" USING GIN (
+        (
+          setweight(to_tsvector('english', title), 'A') ||
+          setweight(to_tsvector('english', coalesce(description, '')), 'B')
+        )
+      );
+
+    CREATE INDEX IF NOT EXISTS idx_product_trgm
+      ON "Product" USING GIN (title gin_trgm_ops);
+
+    CREATE PUBLICATION dbz_publication FOR TABLE "Product";
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: search-service
+spec:
+  serviceName: postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          args: ["-c", "wal_level=logical"]
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: search-service-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: search-service-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: search-service-config
+                  key: POSTGRES_DB
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d/init-db.sql
+              subPath: init-db.sql
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+        - name: init-sql
+          configMap:
+            name: postgres-init-sql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: search-service
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+  clusterIP: None # Headless — StatefulSet DNS

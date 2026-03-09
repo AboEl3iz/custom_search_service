@@ -1,0 +1,58 @@
+# ============================================================
+# Debezium Connector Registration Job
+# Runs ONCE after all services are Ready to register the
+# PostgreSQL connector with Kafka Connect.
+# ============================================================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: register-debezium-connector
+  namespace: search-service
+spec:
+  # Allow restart up to 5 times while services warm up
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: register-connector
+          image: curlimages/curl:8.5.0
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Kafka Connect to be ready..."
+              until curl -sf http://kafka-connect-service:8083/ > /dev/null; do
+                echo "Not ready yet, retrying in 10s..."
+                sleep 10
+              done
+              echo "Kafka Connect is ready. Registering connector..."
+              curl -s -o /dev/null -w "HTTP %{http_code}\n" \
+                -X POST http://kafka-connect-service:8083/connectors \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "name": "products-connector-v4",
+                  "config": {
+                    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+                    "plugin.name": "pgoutput",
+                    "database.hostname": "postgres-service",
+                    "database.port": "5432",
+                    "database.user": "postgres",
+                    "database.password": "password",
+                    "database.dbname": "search_db",
+                    "database.server.name": "dbserver1",
+                    "topic.prefix": "dbserver1",
+                    "table.include.list": "public.Product",
+                    "publication.name": "dbz_publication",
+                    "slot.name": "debezium_slot_v4",
+                    "decimal.handling.mode": "double",
+                    "heartbeat.interval.ms": "5000",
+                    "transforms": "unwrap",
+                    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+                    "transforms.unwrap.drop.tombstones": "true",
+                    "transforms.unwrap.delete.handling.mode": "rewrite",
+                    "transforms.unwrap.add.fields": "op"
+                  }
+                }'
+              echo ""
+              echo "Connector registration complete."

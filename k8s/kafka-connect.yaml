@@ -1,0 +1,85 @@
+# ============================================================
+# Kafka Connect (Debezium) — Deployment + Service
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-connect
+  namespace: search-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-connect
+  template:
+    metadata:
+      labels:
+        app: kafka-connect
+    spec:
+      initContainers:
+        # Block until Kafka is accepting connections before Debezium Connect starts
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Kafka at kafka-service:29092..."
+              until nc -z kafka-service 29092; do
+                sleep 3
+              done
+              echo "Kafka is ready."
+      containers:
+        - name: kafka-connect
+          image: debezium/connect:2.4
+          ports:
+            - containerPort: 8083
+          env:
+            - name: BOOTSTRAP_SERVERS
+              value: "kafka-service:29092"
+            - name: GROUP_ID
+              value: "debezium-connect-group"
+            - name: CONFIG_STORAGE_TOPIC
+              value: "debezium_connect_configs"
+            - name: OFFSET_STORAGE_TOPIC
+              value: "debezium_connect_offsets"
+            - name: STATUS_STORAGE_TOPIC
+              value: "debezium_connect_statuses"
+            - name: CONFIG_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: OFFSET_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: STATUS_STORAGE_REPLICATION_FACTOR
+              value: "1"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8083
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8083
+            initialDelaySeconds: 90
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-connect-service
+  namespace: search-service
+spec:
+  selector:
+    app: kafka-connect
+  ports:
+    - port: 8083
+      targetPort: 8083
